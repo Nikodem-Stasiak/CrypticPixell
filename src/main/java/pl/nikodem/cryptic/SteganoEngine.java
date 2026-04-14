@@ -66,31 +66,35 @@ public class SteganoEngine {
             for (int x = 0; x < image.getWidth(); x++) {
                 int pixel = image.getRGB(x, y);
 
-                //Wyciągamy składowe
+                // Pobieramy kanały
                 int red = (pixel >> 16) & 0xff;
                 int green = (pixel >> 8) & 0xff;
                 int blue = pixel & 0xff;
 
-                //Wyciągamy ostatnie bity (LSB) i dodajemy do wyniku
-                binaryResult.append(red & 1);
-                binaryResult.append(green & 1);
-                binaryResult.append(blue & 1);
-
-                // Sprawdzamy, czy mamy już "znacznik końca" (nasze 16 zer)
-                // Robimy to co jakiś czas, żeby nie obciążać procesora,
-                // albo po prostu na końcu każdego piksela.
-                if (binaryResult.length() >= 16) {
-                    String last16 = binaryResult.substring(binaryResult.length() - 16);
-                    if (last16.equals("0000000000000000")) {
-                        // Znaleźliśmy koniec! Wycinamy zera i dekodujemy resztę.
-                        String finalBinary = binaryResult.substring(0, binaryResult.length() - 16);
-                        return converter.binaryToString(finalBinary);
-                    }
-                }
+                // Dodajemy bity JEDEN PO DRUGIM i od razu sprawdzamy znacznik
+                if (addBitAndCheckMarker(binaryResult, red & 1)) return decodeResult(binaryResult);
+                if (addBitAndCheckMarker(binaryResult, green & 1)) return decodeResult(binaryResult);
+                if (addBitAndCheckMarker(binaryResult, blue & 1)) return decodeResult(binaryResult);
             }
         }
 
         return "Nie znaleziono ukrytej wiadomości.";
+    }
+
+    // Pomocnicza metoda, żeby kod był czystszy
+    private boolean addBitAndCheckMarker(StringBuilder builder, int bit) {
+        builder.append(bit);
+        if (builder.length() >= 16) {
+            String last16 = builder.substring(builder.length() - 16);
+            return last16.equals("0000000000000000");
+        }
+        return false;
+    }
+
+    // Pomocnicza metoda do finalnego wycięcia tekstu
+    private String decodeResult(StringBuilder builder) {
+        String finalBinary = builder.substring(0, builder.length() - 16);
+        return converter.binaryToString(finalBinary);
     }
 
     private BufferedImage copyImage(BufferedImage original) {
