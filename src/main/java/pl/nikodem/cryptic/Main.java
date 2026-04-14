@@ -2,54 +2,73 @@ package pl.nikodem.cryptic;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        //Inicjalizacja narzędzi
+        Scanner scanner = new Scanner(System.in);
         ImageProcessor processor = new ImageProcessor();
         SteganoEngine engine = new SteganoEngine();
 
-        // Ścieżki do plików (Zmień na swoje!)
-        String inputPath = "C:\\Users\\nikod\\Desktop\\Döner_kebab.png";
-        String outputPath = "C:\\Users\\nikod\\Desktop\\secret_kebab.png";
-        String secretMessage = "Tajny projekt CrypticPixell - misja zaliczenie!";
+        System.out.println("--- WITAJ W CRYPTIC PIXELL ---");
 
-        try {
-            System.out.println("--- ROZPOCZYNAMY KODOWANIE ---");
+        while (true) {
+            System.out.println("\nWYBIERZ OPCJĘ:");
+            System.out.println("1. Zakoduj wiadomość w obrazie");
+            System.out.println("2. Odczytaj wiadomość z obrazu");
+            System.out.println("0. Wyjdź");
+            System.out.print("Wybór: ");
 
-            // Wczytujemy oryginał
-            BufferedImage originalImage = processor.loadImage(inputPath);
-            System.out.println("Pomyślnie wczytano obrazek: " + originalImage.getWidth() + "x" + originalImage.getHeight());
+            String choice = scanner.nextLine();
 
-            // Kodujemy wiadomość
-            System.out.println("Koduję wiadomość: " + secretMessage);
-            BufferedImage encodedImage = engine.encode(originalImage, secretMessage);
-
-            // Zapisujemy wynik
-            processor.saveImage(encodedImage, outputPath);
-            System.out.println("--- KODOWANIE ZAKOŃCZONE ---");
-
-            System.out.println("\n--- ROZPOCZYNAMY DEKODOWANIE ---");
-
-            // Wczytujemy ZAPISANY obrazek (to ważne, by sprawdzić czy zapis nie uszkodził bitów)
-            BufferedImage toDecode = processor.loadImage(outputPath);
-
-            // Odczytujemy tajemnicę
-            String decodedMessage = engine.decode(toDecode);
-            System.out.println("Odczytana wiadomość: " + decodedMessage);
-
-            // Weryfikacja
-            if (secretMessage.equals(decodedMessage)) {
-                System.out.println("\n✅ SUKCES! Wiadomość została odzyskana w 100%.");
+            if (choice.equals("1")) {
+                handleEncoding(scanner, processor, engine);
+            } else if (choice.equals("2")) {
+                handleDecoding(scanner, processor, engine);
+            } else if (choice.equals("0")) {
+                System.out.println("Zamykanie programu. Do zobaczenia!");
+                break;
             } else {
-                System.out.println("\n❌ BŁĄD! Coś poszło nie tak z bitami.");
+                System.out.println("Nieprawidłowy wybór, spróbuj ponownie.");
             }
+        }
+        scanner.close();
+    }
 
+    private static void handleEncoding(Scanner scanner, ImageProcessor processor, SteganoEngine engine) {
+        try {
+            System.out.print("Podaj ścieżkę do oryginalnego obrazu (PNG): ");
+            String inputPath = scanner.nextLine().replace("\"", ""); // Usuwa cudzysłowy, jeśli ktoś przeciągnął plik
+
+            System.out.print("Podaj wiadomość do ukrycia: ");
+            String message = scanner.nextLine();
+
+            System.out.print("Podaj ścieżkę zapisu (np. C:/Users/Desktop/output.png): ");
+            String outputPath = scanner.nextLine().replace("\"", "");
+
+            BufferedImage original = processor.loadImage(inputPath);
+            BufferedImage encoded = engine.encode(original, message);
+            processor.saveImage(encoded, outputPath);
+
+            System.out.println("✅ Sukces! Wiadomość została ukryta.");
         } catch (IOException e) {
-            System.err.println("Problem z plikiem: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Nieoczekiwany błąd: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Błąd: " + e.getMessage());
+        }
+    }
+
+    private static void handleDecoding(Scanner scanner, ImageProcessor processor, SteganoEngine engine) {
+        try {
+            System.out.print("Podaj ścieżkę do obrazu z ukrytą wiadomością (PNG): ");
+            String path = scanner.nextLine().replace("\"", "");
+
+            BufferedImage image = processor.loadImage(path);
+            String message = engine.decode(image);
+
+            System.out.println("\n----------------------------------");
+            System.out.println("ODCZYTANA WIADOMOŚĆ: " + message);
+            System.out.println("----------------------------------");
+        } catch (IOException e) {
+            System.err.println("❌ Błąd: " + e.getMessage());
         }
     }
 }
